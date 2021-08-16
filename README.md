@@ -3,36 +3,42 @@
 A small community crime search app for Calgary
 
 
-## Database
+## Data
 
 Connect to my local MSSQL Express. Statistics from https://data.calgary.ca/Health-and-Safety/Community-Crime-Statistics/78gh-n26t.
 
 Bascially just download the CSV file and import to my database.
 
+Program will check and update my local database everytime you open it. I assume government staffs won't modify old records, so I only check and insert new records.
+
 
 ## Data Validation
 
-Since the data is fixed, the date and drop down list is fixed as well.
+I also assume drop down lists are fixed as well.
 
 Sector is limited to "NORTH", "EAST", "NORTHEAST", "SOUTH", "NORTHWEST", "SOUTHEAST", "CENTRE", "WEST".
 
 Category is limited to "Break & Enter - Commercial", "Commercial Robbery", "Theft FROM Vehicle", "Violence Other (Non-domestic)", "Break & Enter - Other Premises", "Street Robbery", "Theft OF Vehicle", "Assault (Non-domestic)", "Break & Enter - Dwelling".
 
-Date is limited to 2017-01 to 2021-06.
-
-If the data is updated, the date and drop down items may need to change.
+Date starts from 2017-01.
 
 
 ## Dependencies
 
 .NET 4.7.1
 
+SODA.NET is available as a Nuget package called CSM.SodaDotNet
+
 GMap.NET Windows Form is available as a Nuget package
 
 
 ## Executing program
 
-Run the program, it displayed all records without pinning on the map defaultly.
+Run the program and click Start button, it will connect to local database and check update.
+
+If it fails to connect to local database, it will stop the process. If no update or update failed, it will continue to use old data.
+
+Software displays all records without pinning on the map defaultly.
 
 You can choose the Sector, Category, Date range, and pin on the map or not as you want.
 
