@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Windows.Forms;
+using SODA;
 
 namespace CommunityCrimeApp
 {
@@ -30,7 +31,7 @@ namespace CommunityCrimeApp
         }
 
         private readonly DateTime _minDate = new DateTime(2017, 1, 1);
-        private readonly DateTime _maxDate = new DateTime(2021, 6, 1);
+        private readonly DateTime _maxDate = DateTime.Today;
         private readonly string _conString = "Data Source=TANSEM-PC;Initial Catalog=CommunityCrimeStat;Integrated Security=True";
         private List<CrimeRecord> _result = new List<CrimeRecord>();
 
@@ -42,6 +43,38 @@ namespace CommunityCrimeApp
             {
                 MessageBox.Show("Cannot connect to database");
                 return;
+            }
+
+            // Update database through API
+            try
+            {
+                // SSL/TLS security problem. Need this line
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+                var client = new SodaClient("https://data.calgary.ca", "h9PrlRw4UhMRb3Z6ebVA0n0ly");
+                var dataset = client.GetResource<Dictionary<string, object>>("78gh-n26t");
+                
+                var query = "SELECT MAX(date) FROM Community_Crime_Statistics;";
+                var cmd = new SqlCommand(query, con);
+                var latestDate = (DateTime)cmd.ExecuteScalar();
+                var newRows = dataset.GetRows().Where(x => (DateTime)x["date"] > latestDate).ToList();
+                if (newRows.Count > 0)
+                {
+                    foreach (var row in newRows)
+                    {
+                        query = string.Concat("INSERT INTO Community_Crime_Statistics VALUES ('", row["sector"].ToString(), "', '",
+                            row["community_name"].ToString(), "', '", row["category"].ToString(), "', ", Convert.ToInt32(row["crime_count"]), ", ",
+                            Convert.ToInt32(row["resident_count"]), ", '", (DateTime)row["date"], "', '", row["year"].ToString(), "', '", 
+                            row["month"].ToString(), "', '", row["long"].ToString(), "', '", row["lat"].ToString(), "', '", row["id"].ToString(), 
+                            "', 'POINT (", row["long"].ToString(), ", ", row["lat"].ToString(), ")');");
+                        cmd = new SqlCommand(query, con);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch
+            {
+                MessageBox.Show("Cannot update database.\nThe current database may not contain the newest info.");
             }
 
             splitContainer1.Visible = true;
@@ -56,8 +89,9 @@ namespace CommunityCrimeApp
             checkBox1.CheckedChanged += (o, i) => { UpdateSearch(con); };
             gMapControl1.MapProvider = GMapProviders.GoogleMap;
             gMapControl1.DragButton = MouseButtons.Left;
-            var latitude = 51.0447;
-            var longitude = -114.0719;
+            const double latitude = 51.0447;
+            const double longitude = -114.0719;
+            // Locate to the centre of City of Calgary
             gMapControl1.Position = new GMap.NET.PointLatLng(latitude, longitude);
             gMapControl1.MinZoom = 9;
             gMapControl1.MaxZoom = 15;
